@@ -26,7 +26,7 @@ CREATE TABLE nt_user_base
 --
 CREATE TABLE nt_param
 (
-    id          bigint unsigned NOT NULL auto_increment,
+    id          bigint unsigned auto_increment,
     category    varchar(64) NOT NULL,
     module      varchar(64) NOT NULL,
     name        varchar(64) NOT NULL,

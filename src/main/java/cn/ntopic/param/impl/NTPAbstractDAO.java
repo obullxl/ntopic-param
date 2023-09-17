@@ -6,6 +6,7 @@ package cn.ntopic.param.impl;
 
 import cn.ntopic.param.NTParamDAO;
 import cn.ntopic.param.model.NTParamDO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.Assert;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +157,22 @@ public abstract class NTPAbstractDAO implements NTParamDAO {
     private Date toDate(Object object) {
         if (object == null) {
             return null;
+        }
+
+        if (object instanceof String) {
+            String date = (String) object;
+            int valueLength = StringUtils.length(date);
+
+            String[] patterns = new String[]{"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm:ss.SSS"};
+            for (String pattern : patterns) {
+                if (valueLength == StringUtils.length(pattern)) {
+                    try {
+                        return new SimpleDateFormat(pattern).parse((String) object);
+                    } catch (ParseException e) {
+                        throw new RuntimeException("Date解析异常-" + e.getMessage(), e);
+                    }
+                }
+            }
         }
 
         return (Date) object;
