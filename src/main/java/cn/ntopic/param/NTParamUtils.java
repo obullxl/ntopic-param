@@ -10,6 +10,7 @@ import cn.ntopic.param.model.NTParamList;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.*;
 
@@ -26,7 +27,11 @@ public class NTParamUtils {
      */
     private static NTParamDAO PARAM_DAO;
 
-    public NTParamUtils(NTParamDAO ntParamDAO) {
+    /**
+     * 依赖注入
+     * @param ntParamDAO 参数DAO
+     */
+    public NTParamUtils(@Qualifier("ntParamDAO") NTParamDAO ntParamDAO) {
         if (ntParamDAO == null) {
             throw new IllegalArgumentException("NTParamDAO参数为NULL.");
         }

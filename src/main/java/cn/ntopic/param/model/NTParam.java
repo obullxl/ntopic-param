@@ -5,12 +5,16 @@
 package cn.ntopic.param.model;
 
 import cn.ntopic.param.builder.ToString;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 单个参数对象
@@ -120,6 +124,19 @@ public class NTParam extends ToString {
         } catch (Throwable e) {
             LOGGER.warn("BigDecimal异常[{}]-[{}].", this.getContent(), e.getMessage());
             return defaultValue;
+        }
+    }
+
+    /**
+     * `Map`类型值
+     */
+    public Map<String, String> toMap() {
+        try {
+            return JSON.parseObject(this.getContent(), new TypeReference<Map<String, String>>() {
+            });
+        } catch (Throwable e) {
+            LOGGER.warn("Map类型转换异常[{}].", this.getContent(), e);
+            return new HashMap<>();
         }
     }
 }

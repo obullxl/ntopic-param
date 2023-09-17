@@ -1,7 +1,7 @@
-# 通用高性能的分布式id序列服务
-+ `通用性：`仅依赖一张序列数据表，JDBC支持的数据库均可使用，包括SQLite、MySQL、Oracle、OceanBase等。
-+ `高性能：`本地缓存一个序列区间，缓存使用完之前无DB交互；缓存的区间可设置，区间越大，DB访问越少，性能越高。
-+ `分布式：`受益于集中式的序列数据表，保证了序列全局唯一。
+# 通用的参数配置组件工具
++ `通用性：`仅依赖一张参数数据表，JDBC支持的数据库均可使用，包括SQLite、MySQL、Oracle、OceanBase等。
++ `高性能：`本地增加缓存，DB访问越少，性能越高。
++ `分布式：`受益于集中式的参数数据表，保证了序列全局唯一。
 
 # 使用步骤
 
@@ -35,64 +35,63 @@
 ```xml
 <dependency>
     <groupId>cn.ntopic</groupId>
-    <artifactId>sequence-jdbc</artifactId>
-    <version>1.0.2</version>
+    <artifactId>ntopic-param</artifactId>
+    <version>1.0.1</version>
 </dependency>
 ```
 
-## 创建数据表（可选）
-+ 项目根目录有测试的SQLite数据库（`SequenceJDBC.sqlite`），可直接用于测试；其他的数据库，可提前创建数据表。
-+ 序列数据表名可自定义（默认为`nt_sequence`），但表的2个字段（`name`和`value`）名称不可修改。
-+ `可选：`默认情况下，序列服务可尝试创建数据表，若当前用户无建表权限，则需要手工创建以下序列数据表：
+## 创建数据表
++ 项目根目录有测试的SQLite数据库（`NTParam.sqlite`），可直接用于测试；其他的数据库，可提前创建数据表。
 ```sql
-CREATE TABLE nt_sequence
+CREATE TABLE nt_param
 (
-    name  VARCHAR(64) NOT NULL COMMENT '序列名称',
-    value bigint      NOT NULL COMMENT '序列值',
-    PRIMARY KEY (name)
-) COMMENT='序列数据表'
+    id          bigint unsigned NOT NULL auto_increment COMMENT '自增ID',
+    category    varchar(64)     NOT NULL COMMENT '分类，如：SYSTEM-系统参数，CONFIG-业务配置等',
+    module      varchar(64)     NOT NULL COMMENT '模块，如：USER-用户配置等',
+    name        varchar(64)     NOT NULL COMMENT '参数名，如：minAge-最新年龄等',
+    content     varchar(4096)            DEFAULT '' COMMENT '参数值，如：18-18岁等',
+    create_time timestamp(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+    modify_time timestamp(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_nt_param_m_c_n (category, module, name)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='NTopicX-参数配置数据表'
 ;
 ```
 
 ## 实例化
 ```java
 // 获取数据源，业务代码提供
-DruidDataSource dataSource = new DruidDataSource();
-dataSource.setUrl("jdbc:sqlite:./sequence-jdbc/SequenceJDBC.sqlite");
-dataSource.setDriverClassName("org.sqlite.JDBC");
-dataSource.setPoolPreparedStatements(false);
-dataSource.setMaxPoolPreparedStatementPerConnectionSize(-1);
-dataSource.setTestOnBorrow(true);
-dataSource.setTestOnReturn(false);
-dataSource.setTestWhileIdle(true);
-dataSource.setValidationQuery("SELECT '1' FROM sqlite_master LIMIT 1");
+DruidDataSource ntDataSource = new DruidDataSource();
+ntDataSource.setUrl("jdbc:sqlite:./ntopic-param/NTParam.sqlite");
+ntDataSource.setDriverClassName("org.sqlite.JDBC");
+ntDataSource.setPoolPreparedStatements(false);
+ntDataSource.setMaxPoolPreparedStatementPerConnectionSize(-1);
+ntDataSource.setTestOnBorrow(true);
+ntDataSource.setTestOnReturn(false);
+ntDataSource.setTestWhileIdle(true);
+ntDataSource.setValidationQuery("SELECT '1' FROM sqlite_master LIMIT 1");
 
-// 实例化序列
-@Bean("ntSequence")
-public NTSequence ntSequence(DataSource dataSource) {
-    NTSequenceImpl impl = new NTSequenceImpl(dataSource);
+// 实例化参数DAO（特别注意：Bean名称只能为`ntParamDAO`不可变化！）
+@Bean("ntParamDAO")
+public NTParamDAO ntParamDAO(DataSource ntDataSource) {
+    NTParamDAOSQLite ntParamDAO = new NTParamDAOSQLite(ntDataSource);
     
-    // 可选：若自定义序列表名，才需要设置
-    impl.setTableName("nt_sequence"); // 默认为：nt_sequence
+    // 可选：若自定义序列表名，才需要设置（默认为：nt_param）
+    ntParamDAO.setTableName("nt_param");
     
     // 可选：尝试创建数据表，若当前用户无建表权限，则需要人工创建；若表已经创建，则忽略建表
-    impl.createTable();
+    ntParamDAO.createTable();
     
-    // 可选：以下参数为默认值，若无特殊要求，可无需设置
-    impl.setRetryTimes(10);
-    impl.setStep(1000L); // 值越大，访问DB次数越少，性能越好
-    impl.setMinValue(1L);
-    impl.setMaxValue(99999999L); // 序列值最大值，当超过该值，则循环从`minValue`开始
+    // 初始化
+    ntParamDAO.init();
     
-    // 序列初始化
-    impl.init();
-    
-    return impl;
+    return ntParamDAO;
 }
 ```
 
-## 序列使用
-+ 第1种方式：无任何参数，使用默认的序列名称。
+## 参数使用
++ 第1种方式：查询参数列表
 + 第2中方式：指定序列名称（如：`USER`、`ORDER`等），每个业务序列独立。
 ```java
 // 获取`DEFAULT`默认序列ID

@@ -38,7 +38,7 @@ public class ToString implements Serializable {
         if (extFields == null || extFields.length < 1) {
             return toString(object);
         } else {
-            return ToStringBuilder.reflectionToString(object, new cn.ntopic.core.builder.ToStringStyleExt(extFields));
+            return ToStringBuilder.reflectionToString(object, new ToStringStyleExt(extFields));
         }
     }
 

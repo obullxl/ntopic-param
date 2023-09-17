@@ -16,20 +16,27 @@ import java.util.List;
 public interface NTParamDAO {
 
     /**
+     * 存储参数记录（如果参数已经存在则更新，不存在则新增）
+     */
+    int save(String category, String module, String name, String content);
+
+    /**
+     * 删除参数记录
+     */
+    int delete(String category, String module, String name);
+
+    /**
      * 根据分类查询参数列表
      */
-    // @Select("SELECT * FROM nt_param WHERE category=#{category,jdbcType=VARCHAR}")
     List<NTParamDO> selectByCategory(String category);
 
     /**
      * 根据分类+模块查询参数列表
      */
-    // @Select("SELECT * FROM nt_param WHERE category=#{category,jdbcType=VARCHAR} AND module=#{module,jdbcType=VARCHAR}")
     List<NTParamDO> selectByModule(String category, String module);
 
     /**
      * 根据分类+模块+参数名查询单个参数
      */
-//    @Select("SELECT * FROM nt_param WHERE category=#{category,jdbcType=VARCHAR} AND module=#{module,jdbcType=VARCHAR} AND name=#{name,jdbcType=VARCHAR}")
     NTParamDO selectByName(String category, String module, String name);
 }

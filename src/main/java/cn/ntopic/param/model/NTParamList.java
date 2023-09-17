@@ -8,9 +8,7 @@ import cn.ntopic.param.builder.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * 参数对象列表
@@ -123,5 +121,12 @@ public class NTParamList extends ToString {
      */
     public BigDecimal toBigDecimal(String name, BigDecimal defaultValue) {
         return this.fetchParam(name).map(ntParam -> ntParam.toBigDecimal(defaultValue)).orElse(defaultValue);
+    }
+
+    /**
+     * `Map`类型值
+     */
+    public Map<String, String> toMap(String name) {
+        return this.fetchParam(name).map(NTParam::toMap).orElse(new HashMap<>());
     }
 }
